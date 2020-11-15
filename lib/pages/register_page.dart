@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../helpers/show_alert.dart';
+
+import '../services/auth_service.dart';
 
 import '../widgets/labels.dart';
 import '../widgets/logo.dart';
@@ -52,6 +57,8 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -76,8 +83,25 @@ class __FormState extends State<_Form> {
             isPassword: true,
           ),
           ButtonBlue(
-            text: 'Login',
-            onPressed: () {},
+            text: 'Sigh Up',
+            onPressed: authService.authenticationInProcess
+                ? null
+                : () async {
+                    FocusScope.of(context).unfocus();
+                    final sighUpOk = await authService.signUp(
+                        nameCtrl.text.trim(),
+                        emailCtrl.text.trim(),
+                        passCtrl.text.trim());
+                    if (sighUpOk == true) {
+                      Navigator.pushReplacementNamed(context, 'users');
+                    } else {
+                      showAlert(
+                        context,
+                        'Sigh up error',
+                        sighUpOk,
+                      );
+                    }
+                  },
           ),
         ],
       ),

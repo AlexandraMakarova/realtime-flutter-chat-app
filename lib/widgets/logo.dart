@@ -16,7 +16,7 @@ class Logo extends StatelessWidget {
         margin: EdgeInsets.only(top: 50),
         child: Column(
           children: <Widget>[
-            Image(image: AssetImage('assets/tag-logo.png')),
+            Image(image: AssetImage('assets/images/tag-logo.png')),
             SizedBox(height: 20),
             Text(
               'Messenger',

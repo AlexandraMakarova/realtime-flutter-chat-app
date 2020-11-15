@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+
+import '../services/auth_service.dart';
 import '../models/user.dart';
 
 class UsersPage extends StatefulWidget {
@@ -18,10 +22,12 @@ class _UsersPageState extends State<UsersPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authServise = Provider.of<AuthService>(context);
+    final user = authServise.user;
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Mi Nombre',
+          user.name,
           style: TextStyle(color: Colors.black87),
         ),
         elevation: 1,
@@ -31,7 +37,10 @@ class _UsersPageState extends State<UsersPage> {
             Icons.exit_to_app,
             color: Colors.black87,
           ),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, 'login');
+            AuthService.deleteToken();
+          },
         ),
         actions: <Widget>[
           Container(
