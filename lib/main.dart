@@ -11,10 +11,12 @@ class MyApp extends StatelessWidget {
       title: 'Realtime Chat App',
       theme: ThemeData(
         primaryColor: Colors.blue[600],
-        accentColor: Colors.purple[400],
+        primaryColorLight: Color(0xff4D9EF6),
+        buttonColor: Colors.blue[400],
         backgroundColor: Colors.grey[100],
+        fontFamily: "Quicksand",
       ),
-      initialRoute: 'login',
+      initialRoute: 'chat',
       routes: appRoutes,
     );
   }
