@@ -89,7 +89,10 @@ class AuthService with ChangeNotifier {
   }
 
   Future<bool> isLogged() async {
-    final token = await this._storage.read(key: 'token');
+    var token = await this._storage.read(key: 'token');
+    if (token == null) {
+      token = '';
+    }
     final response = await http.get(
       '${Environment.apiUrl}/login',
       headers: {

@@ -2,6 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/messages_response.dart';
+
+import '../services/auth_service.dart';
+import '../services/chat_service.dart';
+import '../services/socket_service.dart';
+
 import '../widgets/chat_message.dart';
 
 class ChatPage extends StatefulWidget {
@@ -13,12 +21,64 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   final _textController = new TextEditingController();
   final _focusNode = new FocusNode();
 
+  ChatService chatService;
+  SocketService socketService;
+  AuthService authService;
+
   List<ChatMessage> _messages = [];
 
   bool _userIsWriting = false;
 
   @override
+  void initState() {
+    super.initState();
+    this.chatService = Provider.of<ChatService>(context, listen: false);
+    this.socketService = Provider.of<SocketService>(context, listen: false);
+    this.authService = Provider.of<AuthService>(context, listen: false);
+
+    this.socketService.socket.on('privat-message', _listenToMessage);
+
+    _loadHistory(this.chatService.addressee.userId);
+  }
+
+  void _loadHistory(String userId) async {
+    List<Message> chat = await this.chatService.getChat(userId);
+
+    final history = chat.map((m) => new ChatMessage(
+          text: m.message,
+          userId: m.from,
+          animationController: new AnimationController(
+            vsync: this,
+            duration: Duration(milliseconds: 0),
+          )..forward(),
+        ));
+
+    setState(() {
+      _messages.insertAll(0, history);
+    });
+  }
+
+  void _listenToMessage(dynamic payload) {
+    ChatMessage message = new ChatMessage(
+      text: payload['message'],
+      userId: payload['from'],
+      animationController: AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: 300),
+      ),
+    );
+
+    setState(() {
+      _messages.insert(0, message);
+    });
+
+    message.animationController.forward();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final addressee = this.chatService.addressee;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).backgroundColor,
@@ -26,7 +86,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
           children: <Widget>[
             CircleAvatar(
               child: Text(
-                'Te',
+                addressee.name.substring(0, 2),
                 style: TextStyle(fontSize: 12),
               ),
               backgroundColor: Colors.blue[100],
@@ -36,7 +96,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
               height: 3,
             ),
             Text(
-              'Vasya Pupkin',
+              addressee.name,
               style: TextStyle(color: Colors.black87, fontSize: 12),
             )
           ],
@@ -125,12 +185,11 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   _handleSubmit(String text) {
     if (text.length == 0) return;
 
-    print(text);
     _textController.clear();
     _focusNode.requestFocus();
 
     final newMessage = new ChatMessage(
-      userId: '123',
+      userId: authService.user.userId,
       text: text,
       animationController: AnimationController(
           vsync: this, duration: Duration(milliseconds: 200)),
@@ -142,6 +201,12 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     setState(() {
       _userIsWriting = false;
     });
+
+    this.socketService.emit('privat-message', {
+      'from': this.authService.user.userId,
+      'to': this.chatService.addressee.userId,
+      'message': text,
+    });
   }
 
   @override
@@ -149,6 +214,8 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     for (ChatMessage message in _messages) {
       message.animationController.dispose();
     }
+
+    this.socketService.socket.off('privat-message');
     super.dispose();
   }
 }
